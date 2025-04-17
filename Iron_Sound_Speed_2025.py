@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 #this code is meant to take the data from https://doi.org/10.1103/PhysRevB.109.184311
 #tables I and II and calculate sound speed and then Gruneisen parameter
@@ -36,9 +37,9 @@ class experiment():
         #fit to rho-cs for LANL qz in relevant region: from Compare_LANLQz_MGLR_soundspeed.py
         return (2.82*rho_qz)-3.45
     def calc_qz_reshock_pres(self,upusher):
-        usample=0.62*upusher-3.84
-        Psample=self.rho0['fe'] * self.Us_fe * usample * 10 ** (-3)
-        return usample,Psample
+        ureshock=0.62*upusher-3.84
+        preshock=self.rho0['fe'] * self.Us_fe * ureshock * 10 ** (-3)
+        return ureshock,preshock
     
     def qzreshock(self):
         '''RESHOCK MODEL'''
@@ -137,7 +138,7 @@ class experiment():
         Msample = 1 - (((1 - Mwitness) / OpaqueF) * reshockTC)
         print("Msample",Msample)
         #want the usample used in the sound speed calculation to be from fit
-        usample_avg=uparray[np.argwhere(self.Us_fe<=Usfit)[0][0]]
+        usample_avg=uparray[np.argwhere(self.Us_fe_avg<=Usfit)[0][0]]
         csample1 = (self.P) / (self.rho * usample_avg * Msample)
         return csample1,usample_avg, self.P, self.rho, Msample, Mwitness, Mreshock, Mpush, OpaqueF,reshockTC
     
@@ -219,9 +220,12 @@ shot_31383=experiment(19.1,14.8,15.15,1.0629,833,15.2)
 #print("Us Up fit fe",shot_31383.Us_Up_fit('fe'))
 #print("qz IM", shot_31383.qz_IM())
 #print("qz reshock",shot_31383.qzreshock())
-#print("sample sound speed 31383",shot_31383.calc_sample_snd_spd())
-#print("sample gruneisen 31383",shot_31383.calc_gruneisen_parameter())
+print("sample sound speed 31383",shot_31383.calc_sample_snd_spd())
+print("sample gruneisen 31383",shot_31383.calc_gruneisen_parameter())
 
 shot_31381=experiment(34.65,24.5,26.20,1.1133,2870,20.0)
 print("sample sound speed 31381",shot_31381.calc_sample_snd_spd())
-#print("sample gruneisen 31381",shot_31381.calc_gruneisen_parameter())
+print("sample gruneisen 31381",shot_31381.calc_gruneisen_parameter())
+
+
+plt.show()
