@@ -5,10 +5,12 @@ import numpy as np
 #goal is to be able to recreate table III
 
 class experiment():
-    def __init__(self,Us_qz,Us_fe,F_value,P,rho):
+    def __init__(self,Us_qz,Us_fe_avg,Us_fe,F_value,P,rho):
         #tell the program the quartz shock velocity (from table I) 
         self.Us_qz=Us_qz
         #tell the program the average iron shock velocity (from table I)
+        self.Us_fe_avg=Us_fe_avg
+        #tell the program the nonsteady waves corrected iron shock velocity (from table I)
         self.Us_fe=Us_fe
         #tell the program the F value for nonsteady waves (from table I)
         self.F_value=F_value
@@ -28,6 +30,15 @@ class experiment():
         #will have to use fit to cs-rho for qz high pressure or knudson desjarlais cannot use LANL Qz stuff
         #fit to rho-cs for LANL qz in relevant region: from Compare_LANLQz_MGLR_soundspeed.py
         return (4.393*rho_qz)-12.404
+    def calc_qz_reshock_snd_spd(self,rho_qz):
+        #put soundspeedknown here
+        #will have to use fit to cs-rho for qz high pressure or knudson desjarlais cannot use LANL Qz stuff
+        #fit to rho-cs for LANL qz in relevant region: from Compare_LANLQz_MGLR_soundspeed.py
+        return (2.82*rho_qz)-3.45
+    def calc_qz_reshock_pres(self,upusher):
+        usample=0.62*upusher-3.84
+        Psample=self.rho0['fe'] * self.Us_fe * usample * 10 ** (-3)
+        return usample,Psample
     
     def qzreshock(self):
         '''RESHOCK MODEL'''
@@ -89,10 +100,6 @@ class experiment():
     def calc_sample_snd_spd(self):
         Usfit=self.Us_Up_fit('fe')[1]
         uparray=self.Us_Up_fit('qz')[0]
-        usample=uparray[np.argwhere(self.Us_fe<=Usfit)[0][0]]
-        Psample = self.rho0['fe'] * self.Us_fe * usample * 10 ** (-3)
-        reshockpres=Psample
-        uqzreshock=usample
         Ppush=self.qz_IM()[2]
         upusher=self.qz_IM()[0]
         rhopush=self.qz_IM()[1]
@@ -100,26 +107,39 @@ class experiment():
         uwitness=self.qz_IM()[3]
         rhowit=self.qz_IM()[4]
         upreshockedqzarray=self.qzreshock()[2]
+        uqzreshock=self.calc_qz_reshock_pres(self.Us_qz)[0]
+        reshockpres=self.calc_qz_reshock_pres(self.Us_qz)[1]
         raylieghsam=self.rho0['fe']*uparray*self.Us_fe
         rayleighsamnew = self.rho0['fe'] * self.Us_fe* (-upreshockedqzarray + upusher)
         raylieghsamnewinterp=np.interp(upreshockedqzarray, (-upreshockedqzarray+ upusher), rayleighsamnew)
         Preshockedqz=self.qzreshock()[0]
         rhoreshockedqzarray=1/self.qzreshock()[9]
-        rhoreshockedqz=rhoreshockedqzarray[np.argmin(np.abs(Preshockedqz - raylieghsamnewinterp))]
-        creshockedqz1=self.calc_qz_snd_spd(rhoreshockedqz)
+        rhoreshockedqz=rhoreshockedqzarray[np.argmin(np.abs(Preshockedqz - raylieghsamnewinterp))]*10**(-3)
+        creshockedqz1=self.calc_qz_reshock_snd_spd(rhoreshockedqz)
         cwitness1=self.calc_qz_snd_spd(rhowit)
         cpush1=self.calc_qz_snd_spd(rhopush)
         Mpush=(reshockpres-Ppush)/(rhopush*cpush1*(upusher-uqzreshock))
         Mreshock=(reshockpres-Ppush)/(rhoreshockedqz*creshockedqz1*(upusher-uqzreshock))
+        print("uqzreshock test",uqzreshock)
+        print("upusher test", upusher)
+        print("rhoreshockedqz test",rhoreshockedqz)
+        print("creshockedqz1 test",creshockedqz1)
+        print("reshockpres test",reshockpres)
+        print("Ppush test",Ppush)
+        print("Mpush",Mpush)
+        print("Mreshock",Mreshock)
         Mwitness = (Pwitness) / (rhowit  * cwitness1 * uwitness)
-        OpaqueF = 1 / self.F_value
+        OpaqueF = self.F_value
         intermediatereshock=(1+Mreshock)/(1+Mpush)
         reshockTC=intermediatereshock
+        print("reshockTC",reshockTC)
         Mwitness = (Pwitness) / (rhowit  * cwitness1 * uwitness)
         Msample = 1 - (((1 - Mwitness) / OpaqueF) * reshockTC)
-        print("Pwitness",Pwitness)
-        csample1 = (self.P) / (self.rho * usample * Msample)
-        return csample1,usample
+        print("Msample",Msample)
+        #want the usample used in the sound speed calculation to be from fit
+        usample_avg=uparray[np.argwhere(self.Us_fe<=Usfit)[0][0]]
+        csample1 = (self.P) / (self.rho * usample_avg * Msample)
+        return csample1,usample_avg, self.P, self.rho, Msample, Mwitness, Mreshock, Mpush, OpaqueF,reshockTC
     
     def calc_gruneisen_parameter(self):
         gammashot = (2/self.rho)*((self.calc_sample_snd_spd()[0] ** 2)*(self.rho**2) - self.dPdRho()*(self.rho**2)) / (( self.P ) -  self.dPdRho() * (self.rho**2) * (-(1 / self.rho) + (1 / (self.rho0['fe'] * 10 ** (-3)))))
@@ -194,10 +214,14 @@ class experiment():
         
         return slopeshot
 
-shot_31383=experiment(19.1,14.8,1.0629,833,15.2)
-print("Us Up fit qz",shot_31383.Us_Up_fit('qz'))
-print("Us Up fit fe",shot_31383.Us_Up_fit('fe'))
-print("qz IM", shot_31383.qz_IM())
-print("qz reshock",shot_31383.qzreshock())
-print("sample sound speed",shot_31383.calc_sample_snd_spd())
-print("sample gruneisen",shot_31383.calc_gruneisen_parameter())
+shot_31383=experiment(19.1,14.8,15.15,1.0629,833,15.2)
+#print("Us Up fit qz",shot_31383.Us_Up_fit('qz'))
+#print("Us Up fit fe",shot_31383.Us_Up_fit('fe'))
+#print("qz IM", shot_31383.qz_IM())
+#print("qz reshock",shot_31383.qzreshock())
+#print("sample sound speed 31383",shot_31383.calc_sample_snd_spd())
+#print("sample gruneisen 31383",shot_31383.calc_gruneisen_parameter())
+
+shot_31381=experiment(34.65,24.5,26.20,1.1133,2870,20.0)
+print("sample sound speed 31381",shot_31381.calc_sample_snd_spd())
+#print("sample gruneisen 31381",shot_31381.calc_gruneisen_parameter())
