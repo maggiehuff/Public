@@ -39,7 +39,8 @@ class experiment():
     def calc_qz_reshock_pres(self,upusher):
         ureshock=0.62*upusher-3.84
         preshock=self.rho0['fe'] * self.Us_fe * ureshock * 10 ** (-3)
-        return ureshock,preshock
+        rhoreshock=0.1795*upusher+4.3355
+        return ureshock,preshock,rhoreshock
     
     def qzreshock(self):
         '''RESHOCK MODEL'''
@@ -110,20 +111,24 @@ class experiment():
         upreshockedqzarray=self.qzreshock()[2]
         uqzreshock=self.calc_qz_reshock_pres(self.Us_qz)[0]
         reshockpres=self.calc_qz_reshock_pres(self.Us_qz)[1]
-        raylieghsam=self.rho0['fe']*uparray*self.Us_fe
-        rayleighsamnew = self.rho0['fe'] * self.Us_fe* (-upreshockedqzarray + upusher)
-        raylieghsamnewinterp=np.interp(upreshockedqzarray, (-upreshockedqzarray+ upusher), rayleighsamnew)
-        Preshockedqz=self.qzreshock()[0]
-        rhoreshockedqzarray=1/self.qzreshock()[9]
-        rhoreshockedqz=rhoreshockedqzarray[np.argmin(np.abs(Preshockedqz - raylieghsamnewinterp))]*10**(-3)
-        creshockedqz1=self.calc_qz_reshock_snd_spd(rhoreshockedqz)
+        reshockrho=self.calc_qz_reshock_pres(self.Us_qz)[2]
+        #raylieghsam=self.rho0['fe']*uparray*self.Us_fe
+        #rayleighsamnew = self.rho0['fe'] * self.Us_fe* (-upreshockedqzarray + upusher)
+        #raylieghsamnewinterp=np.interp(upreshockedqzarray, (-upreshockedqzarray+ upusher), rayleighsamnew)
+        #Preshockedqz=self.qzreshock()[0]
+        #rhoreshockedqzarray=1/self.qzreshock()[9]
+        #rhoreshockedqz=rhoreshockedqzarray[np.argmin(np.abs(Preshockedqz - raylieghsamnewinterp))]*10**(-3)
+        #creshockedqz1=self.calc_qz_reshock_snd_spd(rhoreshockedqz)
+        creshockedqz1=self.calc_qz_reshock_snd_spd(reshockrho)
         cwitness1=self.calc_qz_snd_spd(rhowit)
         cpush1=self.calc_qz_snd_spd(rhopush)
         Mpush=(reshockpres-Ppush)/(rhopush*cpush1*(upusher-uqzreshock))
-        Mreshock=(reshockpres-Ppush)/(rhoreshockedqz*creshockedqz1*(upusher-uqzreshock))
+        #Mreshock=(reshockpres-Ppush)/(rhoreshockedqz*creshockedqz1*(upusher-uqzreshock))
+        Mreshock=(reshockpres-Ppush)/(reshockrho*creshockedqz1*(upusher-uqzreshock))
         print("uqzreshock test",uqzreshock)
         print("upusher test", upusher)
-        print("rhoreshockedqz test",rhoreshockedqz)
+        #print("rhoreshockedqz test",rhoreshockedqz)
+        print("new reshocked rho",reshockrho)
         print("creshockedqz1 test",creshockedqz1)
         print("reshockpres test",reshockpres)
         print("Ppush test",Ppush)
