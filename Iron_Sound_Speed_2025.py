@@ -125,23 +125,23 @@ class experiment():
         Mpush=(reshockpres-Ppush)/(rhopush*cpush1*(upusher-uqzreshock))
         #Mreshock=(reshockpres-Ppush)/(rhoreshockedqz*creshockedqz1*(upusher-uqzreshock))
         Mreshock=(reshockpres-Ppush)/(reshockrho*creshockedqz1*(upusher-uqzreshock))
-        print("uqzreshock test",uqzreshock)
-        print("upusher test", upusher)
+        #print("uqzreshock test",uqzreshock)
+        #print("upusher test", upusher)
         #print("rhoreshockedqz test",rhoreshockedqz)
-        print("new reshocked rho",reshockrho)
-        print("creshockedqz1 test",creshockedqz1)
-        print("reshockpres test",reshockpres)
-        print("Ppush test",Ppush)
-        print("Mpush",Mpush)
-        print("Mreshock",Mreshock)
+        #print("new reshocked rho",reshockrho)
+        #print("creshockedqz1 test",creshockedqz1)
+        #print("reshockpres test",reshockpres)
+        #print("Ppush test",Ppush)
+        #print("Mpush",Mpush)
+        #print("Mreshock",Mreshock)
         Mwitness = (Pwitness) / (rhowit  * cwitness1 * uwitness)
         OpaqueF = self.F_value
         intermediatereshock=(1+Mreshock)/(1+Mpush)
         reshockTC=intermediatereshock
-        print("reshockTC",reshockTC)
+        #print("reshockTC",reshockTC)
         Mwitness = (Pwitness) / (rhowit  * cwitness1 * uwitness)
         Msample = 1 - (((1 - Mwitness) / OpaqueF) * reshockTC)
-        print("Msample",Msample)
+        #print("Msample",Msample)
         #want the usample used in the sound speed calculation to be from fit
         usample_avg=uparray[np.argwhere(self.Us_fe_avg<=Usfit)[0][0]]
         csample1 = (self.P) / (self.rho * usample_avg * Msample)
@@ -220,13 +220,7 @@ class experiment():
         
         return slopeshot
 
-shot_31383=experiment(19.1,14.8,15.15,1.0629,833,15.2)
-#print("Us Up fit qz",shot_31383.Us_Up_fit('qz'))
-#print("Us Up fit fe",shot_31383.Us_Up_fit('fe'))
-#print("qz IM", shot_31383.qz_IM())
-#print("qz reshock",shot_31383.qzreshock())
-print("sample sound speed 31383",shot_31383.calc_sample_snd_spd())
-print("sample gruneisen 31383",shot_31383.calc_gruneisen_parameter())
+
 
 shot_31381=experiment(34.65,24.5,26.20,1.1133,2870,20.0)
 print("sample sound speed 31381",shot_31381.calc_sample_snd_spd())
